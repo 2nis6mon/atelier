@@ -1,0 +1,300 @@
+/* The CV page: a stable, opaque reading surface (never glass). */
+.cv-pages {
+  position: relative;
+  font-family: var(--cv-body-font);
+  font-size: var(--cv-size);
+  line-height: var(--cv-line);
+  color: var(--cv-text);
+  -webkit-font-smoothing: antialiased;
+}
+.cv-sheet {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: #fffefb;
+  border-radius: 3px;
+  box-shadow: var(--shadow-page);
+  overflow: hidden;
+}
+.cv-pages.print .cv-sheet {
+  border-radius: 0;
+  box-shadow: none;
+}
+.cv-side-band {
+  position: absolute;
+  background: color-mix(in srgb, var(--cv-accent) 7%, #fffdf8);
+}
+.cv-page-number {
+  position: absolute;
+  bottom: 10px;
+  right: 16px;
+  font: 500 10px var(--font-ui);
+  color: rgba(32, 43, 59, 0.35);
+}
+.cv-col {
+  position: absolute;
+  top: 0;
+}
+.cv-fixed-header {
+  position: absolute;
+  z-index: 1;
+}
+.cv-atom {
+  display: flow-root;
+  position: relative;
+}
+.cv-atom.highlight {
+  outline: 2px solid rgba(241, 185, 150, 0.9);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Header */
+.cv-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: calc(10px * var(--cv-space));
+}
+.template-sidebar .cv-header {
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--cv-heading) 18%, transparent);
+}
+.cv-header-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cv-name {
+  display: block;
+  font-family: var(--cv-heading-font);
+  font-size: 2.55em;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--cv-heading);
+}
+.cv-headline {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--cv-heading-font);
+  font-size: 1.38em;
+  color: var(--cv-heading);
+}
+.cv-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  max-width: 44%;
+  padding-top: 4px;
+  font-size: 0.82em;
+  color: color-mix(in srgb, var(--cv-text) 82%, transparent);
+  text-align: right;
+}
+.cv-contact a {
+  color: inherit;
+  text-decoration: none;
+}
+.cv-contact-item {
+  overflow-wrap: anywhere;
+}
+
+/* Sections */
+.cv-atom-blockTitle {
+  padding-top: calc(15px * var(--cv-space));
+  padding-bottom: 5px;
+}
+.cv-atom-blockTitle.first:first-child {
+  padding-top: 0;
+}
+.cv-block-title {
+  display: block;
+  padding-bottom: 3px;
+  border-bottom: 1px solid color-mix(in srgb, var(--cv-heading) 22%, transparent);
+  font-family: var(--cv-heading-font);
+  font-size: 1.32em;
+  font-weight: 600;
+  color: var(--cv-heading);
+}
+.template-sidebar .cv-col-side .cv-block-title,
+.template-compact .cv-block-title {
+  font-size: 1.15em;
+}
+.cv-text,
+.cv-entry-text {
+  display: block;
+  white-space: pre-wrap;
+}
+.cv-atom-text {
+  padding-top: 3px;
+}
+
+/* Entries */
+.cv-atom-entryHead,
+.cv-atom-entryText,
+.cv-atom-bullet {
+  padding-left: var(--cv-date-col);
+}
+.cv-atom-entryHead {
+  padding-top: calc(8px * var(--cv-space));
+}
+.cv-atom.last-in-item {
+  padding-bottom: calc(2px * var(--cv-space));
+}
+.cv-entry-head {
+  position: relative;
+}
+.cv-dates {
+  position: absolute;
+  left: calc(-1 * var(--cv-date-col));
+  top: 0.12em;
+  width: calc(var(--cv-date-col) - 12px);
+  font-size: 0.86em;
+  color: color-mix(in srgb, var(--cv-text) 78%, transparent);
+}
+.template-compact .cv-dates,
+.template-sidebar .cv-dates {
+  position: static;
+  float: right;
+  width: auto;
+  margin-left: 12px;
+}
+.cv-entry-line1 {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.cv-org {
+  font-weight: 650;
+  color: var(--cv-heading);
+}
+.cv-location {
+  margin-left: auto;
+  font-size: 0.86em;
+  color: color-mix(in srgb, var(--cv-text) 75%, transparent);
+  white-space: nowrap;
+}
+.template-compact .cv-location,
+.template-sidebar .cv-location {
+  margin-left: 0;
+}
+.template-compact .cv-location::before,
+.template-sidebar .cv-location::before {
+  content: '· ';
+}
+.cv-role {
+  display: block;
+  font-size: 0.95em;
+  color: color-mix(in srgb, var(--cv-text) 88%, transparent);
+}
+.cv-entry-text {
+  padding-top: 2px;
+}
+.cv-bullet {
+  display: flex;
+  gap: 7px;
+  padding-top: 1px;
+  font-size: 0.93em;
+}
+.cv-bullet-mark {
+  flex: none;
+  color: var(--cv-accent);
+}
+.cv-bullet-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Skills & languages */
+.cv-atom-tags {
+  padding-top: 6px;
+}
+.cv-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+.cv-tags-label {
+  font-weight: 600;
+  margin-right: 4px;
+  color: var(--cv-heading);
+  font-size: 0.92em;
+}
+.cv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.cv-chip {
+  display: inline-block;
+  padding: 1px 9px;
+  border: 1px solid color-mix(in srgb, var(--cv-heading) 22%, transparent);
+  border-radius: 999px;
+  font-size: 0.84em;
+  background: #fffefb;
+}
+.cv-tags-edit {
+  flex: 1;
+  min-width: 120px;
+}
+.cv-atom-pair {
+  padding-top: 3px;
+}
+.cv-pair {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.cv-pair-name {
+  font-weight: 600;
+}
+.cv-pair-level {
+  color: color-mix(in srgb, var(--cv-text) 78%, transparent);
+  font-size: 0.92em;
+}
+.cv-col-side .cv-pair {
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Editing affordances (not printed) */
+.cv-editable {
+  outline: none;
+  border-radius: 2px;
+  transition: background 120ms;
+}
+.cv-editable[contenteditable='true']:hover {
+  background: rgba(248, 223, 205, 0.35);
+}
+.cv-editable[contenteditable='true']:focus {
+  background: rgba(248, 223, 205, 0.5);
+  box-shadow: 0 0 0 2px rgba(241, 185, 150, 0.7);
+}
+.cv-editable[contenteditable='true']:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(32, 43, 59, 0.35);
+}
+.cv-pages.show-zones .cv-col {
+  outline: 1px dashed rgba(168, 79, 54, 0.35);
+  outline-offset: 6px;
+}
+.cv-pages.show-zones .cv-atom-blockTitle {
+  cursor: default;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+}

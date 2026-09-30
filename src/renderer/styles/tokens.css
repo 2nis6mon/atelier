@@ -1,0 +1,81 @@
+/* Atelier design tokens — warm cream / ivory / navy / terracotta / peach.
+   Contrast ratios verified (WCAG AA ≥ 4.5:1 for text):
+   ink #202B3B on cream #F6F1E9 12.7 · secondary #5E6776 on cream 5.08
+   white on terracotta #A84F36 5.47 · terracotta on ivory 5.39 · ink on peach 11.2 */
+
+:root {
+  --cream: #f6f1e9;
+  --cream-2: #efe6d8;
+  --ivory: #fffdfa;
+  --paper: #fffdfa;
+  --ink: #202b3b;
+  --navy: #1f2a44;
+  --secondary: #5e6776;
+  --muted: #555e6d;
+  --line: rgba(32, 43, 59, 0.1);
+  --line-strong: rgba(32, 43, 59, 0.18);
+  --terracotta: #a84f36;
+  --terracotta-deep: #8e3f2b;
+  --terracotta-soft: #f3d9cc;
+  --peach: #f8dfcd;
+  --peach-2: #f6cfb6;
+  --apricot: #f1b996;
+  --success: #256b42;
+  --success-bg: #e3f2e8;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --warning: #8a5a00;
+  --warning-bg: #fff4db;
+  --info: #2b4d7e;
+  --info-bg: #e7eef8;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', Inter, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Source Serif 4 Variable', 'New York', 'Iowan Old Style', Georgia, serif;
+
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius: 13px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Liquid Glass (approximation in the web layer; the window itself uses the native macOS material) */
+  --glass-bg: rgba(255, 252, 247, 0.72);
+  --glass-bg-strong: rgba(255, 252, 247, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.78);
+  --glass-edge: rgba(32, 43, 59, 0.08);
+  --glass-blur: 22px;
+  --glass-saturate: 1.6;
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 0 0 0.5px var(--glass-edge), 0 10px 30px rgba(92, 58, 33, 0.1), 0 2px 6px rgba(32, 43, 59, 0.06);
+  --lens-bg: linear-gradient(180deg, rgba(252, 226, 208, 0.98) 0%, rgba(246, 203, 178, 0.96) 100%);
+  --lens-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 -1px 0 rgba(168, 79, 54, 0.12) inset, 0 4px 14px rgba(168, 79, 54, 0.22);
+
+  --surface: #fffdfa;
+  --surface-2: #fbf7f1;
+  --canvas: rgba(246, 241, 233, 0.9);
+  --shadow-card: 0 1px 2px rgba(32, 43, 59, 0.06), 0 6px 18px rgba(92, 58, 33, 0.06);
+  --shadow-page: 0 2px 6px rgba(32, 43, 59, 0.08), 0 18px 40px rgba(92, 58, 33, 0.12);
+  --focus: 0 0 0 2px var(--ivory), 0 0 0 4px #1f5fbf;
+
+  --dur-press: 150ms;
+  --dur-menu: 190ms;
+  --dur-tab: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-liquid: cubic-bezier(0.3, 0.75, 0.2, 1);
+}
+
+/* Reduced transparency: solid surfaces, same borders, hierarchy and selection. */
+:root[data-transparency='reduce'] {
+  --glass-bg: #fbf7f1;
+  --glass-bg-strong: #fffdfa;
+  --glass-blur: 0px;
+  --glass-saturate: 1;
+  --canvas: #f6f1e9;
+  --lens-bg: #f6cfb6;
+}
+
+:root[data-motion='reduce'] {
+  --dur-press: 0ms;
+  --dur-menu: 0ms;
+  --dur-tab: 0ms;
+}

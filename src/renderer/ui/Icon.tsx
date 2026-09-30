@@ -1,0 +1,65 @@
+// Stroke icons (24×24 viewBox), drawn to sit well next to SF text.
+const PATHS: Record<string, string> = {
+  library: 'M4 5h4v14H4zM10 5h4v14h-4zM16.5 5.5l3.5 1-3.8 13-3.5-1z',
+  briefcase: 'M4 8h16v11H4zM9 8V5.5h6V8M4 13h16',
+  doc: 'M7 3h7l4 4v14H7zM14 3v4h4M9.5 12h6M9.5 15.5h6',
+  plus: 'M12 5v14M5 12h14',
+  import: 'M12 4v11m-4-4 4 4 4-4M5 19h14',
+  export: 'M12 16V5m-4 4 4-4 4 4M5 14v5h14v-5',
+  sparkles: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z',
+  translate: 'M4 6h9M8.5 4v2M6 6c.8 3 2.8 5.4 5.5 6.5M11 6c-.6 3.6-3 6.4-6.5 7.5M13 20l3.5-8 3.5 8M14.2 17.3h4.6',
+  rewrite: 'M12 4a8 8 0 1 1-7.4 5M4 4v5h5',
+  content: 'M6 3h9l3 3v15H6zM9 9h6M9 12.5h6M9 16h4',
+  layout: 'M4 4h16v16H4zM4 10h16M10 10v10',
+  style: 'M14.5 4.5l5 5-9 9H5.5v-5zM12.5 6.5l5 5',
+  versions: 'M12 7v5l3 2M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4 4v4h4',
+  gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19.4 13.5l1.6 1.2-2 3.4-1.9-.7a7 7 0 0 1-2.2 1.3L14.5 21h-4l-.4-2.3a7 7 0 0 1-2.2-1.3l-1.9.7-2-3.4 1.6-1.2a7 7 0 0 1 0-3l-1.6-1.2 2-3.4 1.9.7a7 7 0 0 1 2.2-1.3L10.5 3h4l.4 2.3a7 7 0 0 1 2.2 1.3l1.9-.7 2 3.4-1.6 1.2a7 7 0 0 1 0 3z',
+  back: 'M19 12H5m6-6-6 6 6 6',
+  forward: 'M5 12h14m-6-6 6 6-6 6',
+  close: 'M6 6l12 12M18 6 6 18',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  warning: 'M12 4 21 20H3zM12 10v4.5M12 17.2v.3',
+  info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.8v.3',
+  lock: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
+  trash: 'M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13',
+  duplicate: 'M8 8h11v12H8zM5 16V4h11',
+  more: 'M6 12h.01M12 12h.01M18 12h.01',
+  down: 'M6 9l6 6 6-6',
+  up: 'M6 15l6-6 6 6',
+  right: 'M9 6l6 6-6 6',
+  left: 'M15 6l-6 6 6 6',
+  grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  eye: 'M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+  eyeOff: 'M3 3l18 18M10.6 5.6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.8M6.6 6.7C4 8.5 2.5 12 2.5 12s3.5 6.5 9.5 6.5c1.6 0 3-.4 4.2-1',
+  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM15.5 15.5 20 20',
+  stop: 'M7 7h10v10H7z',
+  refresh: 'M19 12a7 7 0 1 1-2-4.9M19 4v4h-4',
+  bold: 'M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z',
+  italic: 'M10 5h8M6 19h8M14 5l-4 14',
+  folder: 'M3 6h6l2 2h10v11H3z',
+  file: 'M7 3h7l4 4v14H7zM14 3v4h4',
+  pdf: 'M7 3h7l4 4v14H7zM14 3v4h4M9 13h1.5a1.5 1.5 0 0 1 0 3H9v-5M13 11v5h1.2a1.8 1.8 0 0 0 0-5z',
+  word: 'M7 3h7l4 4v14H7zM14 3v4h4M9 11l1 5 1.5-3.5L13 16l1-5',
+  send: 'M4 12 20 4l-5 16-3-7z',
+  chat: 'M5 5h14v10H10l-4 4v-4H5z',
+  home: 'M4 11 12 4l8 7M6 9.5V20h12V9.5',
+  backup: 'M5 7c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 7v10c0 1.7 3.1 3 7 3s7-1.3 7-3V7M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3',
+  accessibility: 'M12 4.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM5 9l7 1.5L19 9M12 10.5V15l-3 5M12 15l3 5',
+  pages: 'M6 3h12v18H6zM9 8h6M9 12h6M9 16h3',
+  sparkle: 'M12 4l2 6 6 2-6 2-2 6-2-6-6-2 6-2z',
+  compare: 'M8 4v16M16 4v16M4 8h4M16 16h4M4 16l4-4M20 8l-4 4',
+  undo: 'M9 7 4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3',
+  redo: 'M15 7l5 5-5 5M20 12H9a5 5 0 0 0 0 10h3',
+};
+
+export function Icon({ name, size = 16, className, strokeWidth = 1.7 }: { name: keyof typeof PATHS | string; size?: number; className?: string; strokeWidth?: number }) {
+  const d = PATHS[name] ?? PATHS.info;
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d={d} />
+    </svg>
+  );
+}

@@ -294,6 +294,32 @@ export class Store {
     this.db.prepare('DELETE FROM records WHERE id = ?').run(id);
   }
 
+  /**
+   * Merges duplicate records after the user chose every differing value.
+   * Sources are united; working drafts that referenced a removed record are
+   * re-linked to the kept one (sent versions are never touched).
+   */
+  mergeRecords(keepId: string, removeIds: string[], data: Record<string, unknown>, fieldSources: LibraryRecord['fieldSources']): LibraryRecord {
+    return tx(this.db, () => {
+      const keep = this.getRecord(keepId);
+      if (!keep) throw new StoreError('not-found', 'Record not found');
+      const others = removeIds.filter((id) => id !== keepId).map((id) => this.getRecord(id));
+      if (others.some((r) => !r || r.kind !== keep.kind)) throw new StoreError('invalid', 'Only records of the same kind can be merged.');
+      const addSources = others.flatMap((r) => r!.sources);
+      const merged = this.updateRecord(keepId, { data, addSources, fieldSources });
+      for (const r of others) this.deleteRecord(r!.id);
+      const rows = this.db.prepare('SELECT id, document FROM cvs').all() as Row[];
+      for (const row of rows) {
+        const text = String(row.document);
+        if (!others.some((r) => text.includes(r!.id))) continue;
+        const doc = parse<CvDocument>(text, null as unknown as CvDocument);
+        for (const b of doc.blocks) for (const i of b.items) if (i.recordId && others.some((r) => r!.id === i.recordId)) i.recordId = keepId;
+        this.db.prepare('UPDATE cvs SET document = ? WHERE id = ?').run(json(doc), String(row.id));
+      }
+      return merged;
+    });
+  }
+
   /** CVs whose content was copied from a record. */
   recordUsage(recordId: string): Array<{ cvId: string; name: string; updatedAt: string }> {
     const rows = this.db.prepare('SELECT id, name, document, updated_at FROM cvs WHERE document LIKE ?').all(`%${recordId}%`) as Row[];

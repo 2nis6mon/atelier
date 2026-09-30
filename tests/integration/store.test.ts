@@ -310,3 +310,20 @@ describe('proposals, conversation and import batches', () => {
     expect(store.counts()).toMatchObject({ cvs: 1 });
   });
 });
+
+describe('merging duplicate records', () => {
+  it('keeps one record with united sources and re-links drafts', () => {
+    const a = store.createRecord({ kind: 'experience', lang: 'fr', data: { company: 'Nova', role: 'Dev', start: '2021' }, sources: [{ sourceId: 's1', label: 'A.pdf' }] });
+    const b = store.createRecord({ kind: 'experience', lang: 'fr', data: { company: 'Nova', role: 'Dev', start: '2022' }, sources: [{ sourceId: 's2', label: 'B.docx' }] });
+    const doc = sampleDocument();
+    doc.blocks[1].items[0].recordId = b.id;
+    const cv = store.createCv({ name: 'CV', lang: 'fr', document: doc });
+    const merged = store.mergeRecords(a.id, [b.id], { start: '2021' }, { start: { sourceId: 's1', label: 'A.pdf' } });
+    expect(merged.sources.map((s) => s.label)).toEqual(['A.pdf', 'B.docx']);
+    expect(store.getRecord(b.id)).toBeNull();
+    expect(store.getCv(cv.id)!.document.blocks[1].items[0].recordId).toBe(a.id);
+    const skill = store.createRecord({ kind: 'skill', lang: 'fr', data: { name: 'React' } });
+    expect(() => store.mergeRecords(a.id, [skill.id], {}, {})).toThrow(/same kind/);
+    expect(() => store.mergeRecords('none', [], {}, {})).toThrow(StoreError);
+  });
+});
