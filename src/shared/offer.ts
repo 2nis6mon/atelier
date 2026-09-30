@@ -112,7 +112,7 @@ export function htmlFragmentToText(html: string): string {
       .replace(/<(p|div|section|article|h[1-6]|ul|ol|tr|table|blockquote)\b[^>]*>/gi, '\n')
       .replace(/<[^>]+>/g, ' '),
   )
-    .replace(/[ \t ]+/g, ' ')
+    .replace(/[ \t\u00a0]+/g, ' ')
     .split('\n')
     .map((l) => l.trim())
     .filter((l, i, arr) => l !== '' || (i > 0 && arr[i - 1] !== ''))

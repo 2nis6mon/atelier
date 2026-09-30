@@ -515,7 +515,7 @@ export function parseCvText(text: string, opts: { langHint?: Lang } = {}): Parse
   const lines = joinWrappedLines(
     text
       .replace(/\r\n?/g, '\n')
-      .replace(/ /g, ' ')
+      .replace(/\u00a0/g, ' ')
       .split('\n'),
   );
 

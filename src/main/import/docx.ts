@@ -17,7 +17,7 @@ export async function extractDocx(data: Uint8Array): Promise<{ text: string; war
       .replace(/<\/t[dh]>/gi, '\t')
       .replace(/<[^>]+>/g, ''),
   )
-    .replace(/[  ]+/g, ' ')
+    .replace(/[ \u00a0]+/g, ' ')
     .split('\n')
     .map((l) => l.replace(/^ +| +$/g, ''))
     .join('\n')
