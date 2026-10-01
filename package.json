@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node scripts/run-vitest.mjs run",
-    "test:coverage": "node scripts/run-vitest.mjs run --coverage",
+    "test:coverage": "node scripts/test-coverage.mjs",
     "test:e2e": "npm run build && playwright test",
     "fixtures": "node scripts/make-fixtures.mjs",
     "dist:mac": "npm run build && electron-builder --mac --arm64 --publish never",

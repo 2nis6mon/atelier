@@ -176,7 +176,8 @@ export interface AtelierApi {
     list(): Promise<CvSummary[]>;
     get(id: string): Promise<Cv | null>;
     create(input: { name: string; lang: Lang; template: TemplateId; fromLibrary: boolean; description?: string }): Promise<Result<Cv>>;
-    duplicate(id: string, name: string): Promise<Result<Cv>>;
+    /** keepApplication: the copy stays attached to the same application (e.g. a translated version). */
+    duplicate(id: string, name: string, keepApplication?: boolean): Promise<Result<Cv>>;
     updateMeta(id: string, patch: { name?: string; description?: string; lang?: Lang }): Promise<Result<Cv>>;
     save(id: string, document: CvDocument, revision: number): Promise<Result<{ revision: number; updatedAt: string }>>;
     remove(id: string): Promise<Result<void>>;

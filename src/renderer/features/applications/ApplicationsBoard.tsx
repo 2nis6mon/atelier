@@ -58,7 +58,7 @@ export function ApplicationsBoard() {
   };
 
   const columns = useMemo(() => (filter === 'all' ? STATUSES : STATUSES.filter((s) => s === filter)), [filter]);
-  const bases = cvs.filter((c) => !c.applicationId).slice(0, 2);
+  const bases = cvs.filter((c) => !c.applicationId).slice(0, 3);
 
   if (!apps) return <div className="page"><div className="spinner" /></div>;
 

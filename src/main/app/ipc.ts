@@ -202,7 +202,12 @@ export function registerIpc(ctx: IpcContext): void {
       return s().store.createCv({ name: str(input.name, 200), lang: l, document, description: str(input.description ?? '', 500) });
     }),
   );
-  on('cvs.duplicate', (cid: string, name: string) => wrap(() => s().store.duplicateCv(id(cid), { name: str(name, 200) })));
+  on('cvs.duplicate', (cid: string, name: string, keepApplication?: boolean) =>
+    wrap(() => {
+      const src = s().store.getCv(id(cid));
+      return s().store.duplicateCv(id(cid), { name: str(name, 200), applicationId: keepApplication === true ? (src?.applicationId ?? null) : null });
+    }),
+  );
   on('cvs.updateMeta', (cid: string, patch: { name?: string; description?: string; lang?: Lang }) =>
     wrap(() => s().store.updateCvMeta(id(cid), { name: patch.name === undefined ? undefined : str(patch.name, 200), description: patch.description === undefined ? undefined : str(patch.description, 500), lang: patch.lang ? lang(patch.lang) : undefined })),
   );

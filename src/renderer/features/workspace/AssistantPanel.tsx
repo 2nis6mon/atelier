@@ -84,7 +84,10 @@ export function AssistantPanel({ onRun }: { onRun: (r: AiRequestInput) => Promis
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(request), doc, records, application]);
 
-  const actionable = proposals.filter(isActionable);
+  // Everything still waiting for a decision, including questions and comments.
+  // Records in another language are marked, so near-identical labels stay distinguishable.
+  const label = (r: (typeof records)[number]) => `${recordLabel(r)}${r.lang !== doc.lang ? ` (${r.lang.toUpperCase()})` : ''}`;
+  const actionable = proposals.filter((p) => isActionable(p) || ((p.kind === 'question' || p.kind === 'comment') && p.status === 'pending'));
   const accepted = proposals.filter((p) => p.status === 'accepted').length;
   const canRun = !aiRun && !preview.error && (a.action !== 'chat' || a.instructions.trim()) && (!needsOffer || Boolean(application?.offerText.trim()));
 
@@ -209,8 +212,8 @@ export function AssistantPanel({ onRun }: { onRun: (r: AiRequestInput) => Promis
               const r = records.find((x) => x.id === id);
               return r ? (
                 <span key={id} className="chip outline">
-                  {recordLabel(r)}
-                  <button type="button" className="link-btn" aria-label={`Remove ${recordLabel(r)}`} onClick={() => a.set({ libraryRecordIds: a.libraryRecordIds.filter((x) => x !== id) })}>
+                  {label(r)}
+                  <button type="button" className="link-btn" aria-label={`Remove ${label(r)}`} onClick={() => a.set({ libraryRecordIds: a.libraryRecordIds.filter((x) => x !== id) })}>
                     ×
                   </button>
                 </span>
@@ -231,7 +234,7 @@ export function AssistantPanel({ onRun }: { onRun: (r: AiRequestInput) => Promis
                       checked={a.libraryRecordIds.includes(r.id)}
                       onChange={(e) => a.set({ libraryRecordIds: e.target.checked ? [...a.libraryRecordIds, r.id] : a.libraryRecordIds.filter((x) => x !== r.id) })}
                     />
-                    {recordLabel(r)}
+                    {label(r)}
                   </label>
                 ))}
             </div>

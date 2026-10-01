@@ -148,6 +148,7 @@ export function JobContextPanel({ onRun }: { onRun: (r: AiRequestInput) => Promi
               <label key={r.id} className="checkbox small">
                 <input type="checkbox" checked={picked.includes(r.id)} onChange={(e) => setPicked(e.target.checked ? [...picked, r.id] : picked.filter((x) => x !== r.id))} />
                 {recordLabel(r)}
+                {r.lang !== doc.lang ? ` (${r.lang.toUpperCase()})` : ''}
               </label>
             ))}
           </div>

@@ -23,7 +23,8 @@ export async function createTranslatedVersion(cv: Cv, doc: CvDocument, runAi: (r
   const to: Lang = doc.lang === 'fr' ? 'en' : 'fr';
   try {
     await useWorkspace.getState().flush();
-    const copy = await unwrap(api().cvs.duplicate(cv.id, `${cv.name} (${to.toUpperCase()})`));
+    // A translated copy of an application's CV stays attached to that application.
+    const copy = await unwrap(api().cvs.duplicate(cv.id, `${cv.name} (${to.toUpperCase()})`, true));
     await unwrap(api().cvs.updateMeta(copy.id, { lang: to }));
     await unwrap(api().cvs.save(copy.id, translateStandardTitles(copy.document, to), copy.revision));
     navigate({ name: 'workspace', id: copy.id, mode: 'content' });
