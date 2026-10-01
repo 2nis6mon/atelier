@@ -1,0 +1,125 @@
+# Builds, tests and packages Atelier on an Apple Silicon macOS runner.
+# - Type check, unit/integration/component tests and every E2E journey against
+#   the real app, with the merged coverage gate (npm run test:coverage).
+# - Packages a DMG + ZIP for arm64, ad-hoc signed (no Developer ID, not notarized).
+# - Installs the app from the DMG into a temporary Applications folder and runs
+#   the packaged-app smoke test against it.
+# - Uploads the installer, test reports, coverage and screenshots; refreshes a
+#   single DRAFT release ("Atelier — latest build"), visible only to the owner.
+# No secrets or AI credentials are used: AI journeys run against a local,
+# test-only fake provider.
+name: macOS build, test and package
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mac-arm64:
+    runs-on: macos-15
+    timeout-minutes: 75
+    env:
+      ATELIER_SCREENSHOTS: ${{ github.workspace }}/test-results/screenshots
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Environment
+        run: |
+          sw_vers
+          uname -m
+          node --version
+          npm --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Tests and coverage gate (unit, integration, component, E2E)
+        run: npm run test:coverage
+
+      - name: Package (DMG + ZIP, arm64, ad-hoc signed)
+        run: npm run dist:mac
+
+      - name: Install from the DMG and inspect the app
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          DMG=$(ls release/Atelier-*-arm64-mac.dmg)
+          MNT=$(mktemp -d)
+          hdiutil attach "$DMG" -mountpoint "$MNT" -nobrowse -readonly
+          mkdir -p "$RUNNER_TEMP/Applications"
+          cp -R "$MNT/Atelier.app" "$RUNNER_TEMP/Applications/"
+          hdiutil detach "$MNT"
+          APP="$RUNNER_TEMP/Applications/Atelier.app"
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dv "$APP" 2>&1 | tee test-results/codesign.txt
+          lipo -archs "$APP/Contents/MacOS/Atelier" | tee test-results/archs.txt
+          plutil -p "$APP/Contents/Info.plist" | grep -E 'CFBundleIdentifier|CFBundleShortVersionString|LSMinimumSystemVersion|NSAppleEventsUsageDescription' | tee test-results/info-plist.txt
+          # Expected to be rejected: the app is ad-hoc signed and not notarized.
+          (spctl --assess --type execute -vv "$APP" 2>&1 || true) | tee test-results/gatekeeper.txt
+          du -sh "$APP" "$DMG" | tee test-results/sizes.txt
+          shasum -a 256 release/*.dmg release/*.zip | tee test-results/SHA256SUMS.txt
+
+      - name: Smoke test the installed app
+        run: ATELIER_APP_PATH="$APP/Contents/MacOS/Atelier" npx playwright test -c playwright.smoke.config.ts
+
+      - name: Upload installer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atelier-macOS-arm64
+          path: |
+            release/*.dmg
+            release/*.zip
+          if-no-files-found: warn
+
+      - name: Upload test reports, coverage and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            test-results/
+            coverage/SUMMARY.md
+            coverage/summary.json
+            coverage/unit/coverage-summary.json
+            coverage/e2e/coverage-summary.json
+          if-no-files-found: warn
+
+      - name: Refresh the draft release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NAME="Atelier — latest build"
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.draft and .name == \"$NAME\") | .id"); do
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
+          done
+          {
+            echo "Built from \`$GITHUB_SHA\` on $(sw_vers -productName) $(sw_vers -productVersion) ($(uname -m))."
+            echo
+            cat docs/RELEASE_NOTES.md
+            echo
+            echo '### SHA-256'
+            echo '```'
+            cat test-results/SHA256SUMS.txt
+            echo '```'
+          } > release-notes.md
+          gh release create "atelier-latest" --draft --title "$NAME" --notes-file release-notes.md --target "$GITHUB_SHA" release/*.dmg release/*.zip

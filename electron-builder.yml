@@ -1,0 +1,47 @@
+# Packaging for macOS (Apple Silicon). Build on macOS: `npm run dist:mac`.
+# No Apple Developer ID is used: the app is ad-hoc signed (build/afterPack.cjs)
+# and NOT notarized. See docs/INSTALL.md for how to open it the first time.
+appId: app.atelier.personal
+productName: Atelier
+copyright: Atelier — personal CV workspace
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - '!dist/**/*.map'
+  - package.json
+  # Only pdf.js's legacy Node build is used (text extraction in the main process);
+  # its viewer, image decoders, types and the optional native canvas are left out.
+  - '!node_modules/@napi-rs/**'
+  - '!node_modules/pdfjs-dist/{build,web,image_decoders,types}/**'
+  - '!node_modules/pdfjs-dist/legacy/{web,image_decoders}/**'
+  - '!node_modules/**/*.map'
+# No asar: pdf.js is loaded as an ES module by the main process, which is
+# simplest and most reliable from plain files.
+asar: false
+afterPack: build/afterPack.cjs
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  category: public.app-category.productivity
+  icon: build/icon.png
+  identity: null # no Developer ID certificate available; ad-hoc signed in afterPack
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  minimumSystemVersion: '13.0' # Electron 44 supports macOS Ventura and later
+  artifactName: Atelier-${version}-${arch}-mac.${ext}
+  darkModeSupport: false
+  extendInfo:
+    NSAppleEventsUsageDescription: Atelier asks Pages to export a .pages document as Word, only when you click “Convert with Pages”.
+    NSHumanReadableCopyright: Your data stays on this Mac.
+dmg:
+  title: Atelier
+  contents:
+    - { x: 150, y: 190, type: file }
+    - { x: 410, y: 190, type: link, path: /Applications }
+  window: { width: 560, height: 380 }
+publish: null

@@ -23,7 +23,8 @@ const ocr = join(dist, 'renderer/ocr');
 mkdirSync(join(ocr, 'lang'), { recursive: true });
 cpSync(join(root, 'node_modules/tesseract.js/dist/worker.min.js'), join(ocr, 'worker.min.js'));
 for (const f of readdirSync(join(root, 'node_modules/tesseract.js-core'))) {
-  if (/^tesseract-core.*\.(js|wasm)$/.test(f)) cpSync(join(root, 'node_modules/tesseract.js-core', f), join(ocr, f));
+  // OEM 1 (LSTM only) is used, so only the LSTM cores (plain / SIMD / relaxed SIMD) can ever be loaded.
+  if (/^tesseract-core-(relaxedsimd-|simd-)?lstm\.wasm\.js$/.test(f)) cpSync(join(root, 'node_modules/tesseract.js-core', f), join(ocr, f));
 }
 for (const l of ['eng', 'fra']) cpSync(join(root, `node_modules/@tesseract.js-data/${l}/4.0.0_best_int/${l}.traineddata.gz`), join(ocr, 'lang', `${l}.traineddata.gz`));
 console.log('build complete →', dist);
