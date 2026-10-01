@@ -5,6 +5,7 @@
 import * as pdfjs from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { createWorker } from 'tesseract.js';
+import { normalizeOcrText } from '../shared/ocrText';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -46,7 +47,7 @@ export async function ocrPdf(bytes: Uint8Array, onProgress: (fraction: number, l
       p.cleanup();
     }
     onProgress(1, 'Done');
-    return texts.join('\n\n');
+    return normalizeOcrText(texts.join('\n\n'));
   } finally {
     await worker.terminate();
     await task.destroy();

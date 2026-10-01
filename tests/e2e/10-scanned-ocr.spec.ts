@@ -21,6 +21,7 @@ test('read a scanned CV with on-device OCR and import Pages documents', async ()
   await win.getByTestId('run-ocr').click();
   await expect(win.getByTestId('file-detail')).toContainText('Camille Laurent', { timeout: 150_000 });
   await expect(win.getByTestId('file-detail')).toContainText('Atelier Nova');
+  await expect(win.getByTestId('file-detail')).toContainText('• Interfaces React et TypeScript.'); // bullet glyph restored
   await s.shot('91-ocr-done');
 
   // Pages document read by the experimental reader: flagged for careful review.
