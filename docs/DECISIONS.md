@@ -4,7 +4,7 @@
 
 **Contexto.** La app debía construirse y probarse de punta a punta, incluido el binario empaquetado, pero el entorno de desarrollo era Linux; solo la CI tiene macOS.
 **Decisión.** Electron 44 (Chromium 152, Node 24) + React 19 + TypeScript estricto. El mismo código se prueba en Linux (Xvfb) y en macOS (CI, Apple Silicon), y el instalador se genera y se prueba en macOS.
-**Consecuencias.** No es una app nativa AppKit/SwiftUI: tamaño mayor (~200 MB instalada) y materiales aproximados (ADR-2). A cambio: un único código probado de verdad, PDF con el motor de impresión de Chromium e interfaz accesible por teclado.
+**Consecuencias.** No es una app nativa AppKit/SwiftUI: tamaño mayor (app instalada ≈ 320 MB, DMG ≈ 144 MB) y materiales aproximados (ADR-2). A cambio: un único código probado de verdad, PDF con el motor de impresión de Chromium e interfaz accesible por teclado.
 
 ## ADR-2 · Liquid Glass aproximado en la capa web
 
