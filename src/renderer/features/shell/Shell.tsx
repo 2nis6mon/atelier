@@ -17,7 +17,7 @@ export function Shell({ route }: { route: Exclude<Route, { name: 'workspace' | '
   const [newCv, setNewCv] = useState(false);
   const [counts, setCounts] = useState<{ cvs: number; sources: number; apps: number }>({ cvs: 0, sources: 0, apps: 0 });
   const area = route.name === 'library' ? 'library' : 'applications';
-  const refreshKey = useApp((s) => s.importOpen);
+  const refreshKey = useApp((s) => `${s.importOpen}-${s.dataVersion}`);
 
   useEffect(() => {
     let alive = true;

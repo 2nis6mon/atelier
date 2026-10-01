@@ -40,6 +40,7 @@ export function Menu({ anchor, entries, onClose, label }: MenuProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
+        e.preventDefault();
         onClose();
         if (anchor instanceof HTMLElement) anchor.focus();
       }

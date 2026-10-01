@@ -339,6 +339,16 @@ export interface CvVersion {
   applicationId: string | null;
   createdAt: string;
   files: SentFile[];
+  /** Sent versions: the application as it was at send time (later edits to the offer do not change it). */
+  sentContext: SentContext | null;
+}
+
+export interface SentContext {
+  company: string;
+  role: string;
+  offerText: string;
+  offerUrl: string;
+  notes: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -19,6 +19,7 @@ import { fetchOffer } from '../import/offerFetch';
 import { PagesConversionError, convertPagesToDocx, pagesAppPath } from '../import/pagesConvert';
 import { extractPdf } from '../import/pdf';
 import { BACKUP_EXTENSION, buildDataDirFromBackup, inspectBackup, mergeBackup, swapDataDir, writeBackupFile } from '../storage/backup';
+import { RecoveryJournal } from '../storage/recovery';
 import type { Services } from './services';
 import { applyMaterial } from './window';
 
@@ -74,6 +75,18 @@ export function registerIpc(ctx: IpcContext): void {
 
   // ------------------------------------------------------------------ app
   on('app.info', () => ctx.info());
+
+  // ------------------------------------------------------------ recovery
+  const journal = new RecoveryJournal(join(ctx.dataRoot, 'recovery'));
+  on('recovery.write', (cvId: string, document: unknown, at: string) => {
+    try {
+      journal.write(id(cvId), { document: document as never, at: str(at, 64) });
+    } catch {
+      // best effort: the renderer keeps its own copy too
+    }
+  });
+  on('recovery.read', (cvId: string) => journal.read(id(cvId)));
+  on('recovery.clear', (cvId: string) => journal.clear(id(cvId)));
   on('app.openExternal', (url: string) =>
     wrap(async () => {
       const u = new URL(str(url, 2000));
@@ -175,7 +188,7 @@ export function registerIpc(ctx: IpcContext): void {
     }),
   );
   on('importer.removeFile', (batchId: string, sid: string) => wrap(() => s().importer.removeFile(id(batchId), id(sid))));
-  on('importer.commit', (batchId: string, decisions: Record<string, never>) => wrap(() => s().importer.commit(id(batchId), decisions ?? {})));
+  on('importer.commit', (batchId: string, decisions: Record<string, never>, opts?: { createCvs?: boolean }) => wrap(() => s().importer.commit(id(batchId), decisions ?? {}, { createCvs: opts?.createCvs === true })));
   on('importer.discard', (batchId: string) => wrap(() => s().importer.discard(id(batchId))));
 
   // ------------------------------------------------------------------ CVs

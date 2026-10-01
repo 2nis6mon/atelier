@@ -21,6 +21,7 @@ import type {
   LibraryRecord,
   Proposal,
   RecordKind,
+  SentContext,
   SentFile,
   Settings,
   SourceFile,
@@ -459,6 +460,7 @@ export class Store {
       applicationId: (r.application_id as string | null) ?? null,
       createdAt: String(r.created_at),
       files,
+      sentContext: r.sent_context ? parse<SentContext | null>(r.sent_context, null) : null,
     };
   }
 
@@ -512,6 +514,7 @@ export class Store {
       throw new StoreError('stale-export', 'The CV changed after these files were exported. Export again, then mark as sent.');
     }
     const versionId = newId();
+    const sentContext: SentContext = { company: app.company, role: app.role, offerText: app.offerText, offerUrl: app.offerUrl, notes: app.notes };
     const written: string[] = [];
     try {
       const stored = files.map((f) => {
@@ -523,8 +526,8 @@ export class Store {
         const n = this.nextNumber(cvId);
         const now = nowIso();
         this.db
-          .prepare('INSERT INTO cv_versions (id, cv_id, number, kind, label, document, doc_hash, locked, application_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
-          .run(versionId, cvId, n, 'sent', versionLabel('sent', n), json(cv.document), exportedDocHash, applicationId, now);
+          .prepare('INSERT INTO cv_versions (id, cv_id, number, kind, label, document, doc_hash, locked, application_id, created_at, sent_context) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)')
+          .run(versionId, cvId, n, 'sent', versionLabel('sent', n), json(cv.document), exportedDocHash, applicationId, now, json(sentContext));
         const ins = this.db.prepare(
           'INSERT INTO sent_files (id, version_id, kind, filename, stored_path, sha256, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         );

@@ -151,4 +151,11 @@ export const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    description: 'Sent versions keep the application context (offer, notes) as it was when sent',
+    up: (db) => {
+      db.exec('ALTER TABLE cv_versions ADD COLUMN sent_context TEXT');
+    },
+  },
 ];

@@ -132,7 +132,8 @@ export function ApplicationDossier({ id }: { id: string }) {
             ) : (
               <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, maxHeight: 280, overflow: 'auto', fontSize: 13 }}>{app.offerText || <span className="muted">No offer text saved.</span>}</div>
             )}
-            {requirements.length ? (
+            {/* A summary only helps when the offer is long enough to need scrolling. */}
+            {requirements.length && app.offerText.length > 700 ? (
               <>
                 <div className="label" style={{ marginTop: 12 }}>Key requirements (as written in the offer)</div>
                 <ul className="req-list">

@@ -36,12 +36,13 @@ export function SourcesTab() {
   const [view, setView] = useState<SourceFile | null>(null);
   const [remove, setRemove] = useState<SourceFile | null>(null);
   const importOpen = useApp((s) => s.importOpen);
+  const dataVersion = useApp((s) => s.dataVersion);
   const setImportOpen = useApp((s) => s.setImportOpen);
 
   const load = useCallback(async () => setSources(await api().library.sources()), []);
   useEffect(() => {
     void load();
-  }, [load, importOpen]);
+  }, [load, importOpen, dataVersion]);
 
   if (!sources) return <div className="empty"><div className="spinner" /></div>;
   return (

@@ -188,6 +188,10 @@ describe('versions and sent snapshots', () => {
     const next = setText(cv.document, headerPath('headline'), 'Nouveau titre');
     store.saveCvDocument(cv.id, next, cv.revision);
     expect(store.getVersion(version.id)?.document.header.headline).toBe('Développeuse Frontend');
+    // the offer as it was when sent is kept with the version
+    const appId = version.applicationId!;
+    store.updateApplication(appId, { offerText: 'Offre modifiée plus tard', notes: 'note' });
+    expect(store.getVersion(version.id)?.sentContext).toMatchObject({ company: 'Maison', role: 'Frontend Engineer', offerText: 'Offre', notes: '' });
     expect(() => store.renameVersion(version.id, 'x')).toThrow(ImmutableVersionError);
     expect(() => store.deleteVersion(version.id)).toThrow(ImmutableVersionError);
     expect(() => store.deleteCv(cv.id)).toThrow(/sent versions/);

@@ -7,7 +7,7 @@ import { basename, extname, join, relative } from 'node:path';
 import { zipSync } from 'fflate';
 import { parseCvText, type ParsedCandidate } from '../../shared/cvparse';
 import { type GroupResolution, type MergeGroup, groupCandidates, resolveGroup } from '../../shared/dedupe';
-import { newId } from '../../shared/document';
+import { buildDocumentFromLibrary, newId } from '../../shared/document';
 import { detectLang } from '../../shared/lang';
 import type { ExtractionStatus, Lang, SourceFormat } from '../../shared/types';
 import type { Store } from '../db/store';
@@ -42,6 +42,8 @@ export interface CommitResult {
   created: number;
   updated: number;
   skipped: number;
+  /** CVs created from the imported documents (one per readable document, when requested). */
+  cvs: Array<{ id: string; name: string }>;
 }
 
 export type GroupDecision = GroupResolution & { skip?: boolean };
@@ -257,28 +259,58 @@ export class ImportService {
   }
 
   /** Saves the reviewed records. Conflicts must be resolved (or the group kept separate / skipped). */
-  commit(batchId: string, decisions: Record<string, GroupDecision>): CommitResult {
+  commit(batchId: string, decisions: Record<string, GroupDecision>, opts: { createCvs?: boolean } = {}): CommitResult {
     const batch = this.requireBatch(batchId);
     // Recompute groups against the library as it is now, but keep the reviewed ids.
     const groups = batch.groups;
     const resolved = groups.flatMap((g) => {
       const d = decisions[g.id] ?? { mode: 'merge', choices: {} };
       if (d.skip) return [];
-      return resolveGroup(g, d);
+      return resolveGroup(g, d).map((r) => ({
+        ...r,
+        // The candidates this record came from, to rebuild each document's own lists (bullets…) in its CV.
+        members: g.members.filter((m) => m.origin === 'candidate' && m.sources.some((s) => r.sources.some((rs) => rs.sourceId === s.sourceId))),
+      }));
     });
     let created = 0;
     let updated = 0;
     const perSource = new Map<string, number>();
+    const recordsBySource = new Map<string, Array<{ recordId: string; own: Record<string, unknown> }>>();
+    const cvs: CommitResult['cvs'] = [];
     const run = () => {
       for (const r of resolved) {
+        let recordId: string;
         if (r.existingRecordId && this.store.getRecord(r.existingRecordId)) {
           this.store.updateRecord(r.existingRecordId, { data: r.data, addSources: r.sources, fieldSources: r.fieldSources });
+          recordId = r.existingRecordId;
           updated++;
         } else {
-          this.store.createRecord({ kind: r.kind, lang: r.lang, data: r.data, sources: r.sources, fieldSources: r.fieldSources });
+          recordId = this.store.createRecord({ kind: r.kind, lang: r.lang, data: r.data, sources: r.sources, fieldSources: r.fieldSources }).id;
           created++;
         }
         for (const s of r.sources) perSource.set(s.sourceId, (perSource.get(s.sourceId) ?? 0) + 1);
+        for (const m of r.members) {
+          for (const s of m.sources) recordsBySource.set(s.sourceId, [...(recordsBySource.get(s.sourceId) ?? []), { recordId, own: m.data }]);
+        }
+      }
+      if (opts.createCvs) {
+        // Each readable document becomes its own editable CV, built only from the records it contributed.
+        for (const f of batch.files) {
+          const entries = f.sourceId ? recordsBySource.get(f.sourceId) : undefined;
+          if (!entries?.length) continue;
+          const seen = new Set<string>();
+          const records = entries.flatMap(({ recordId, own }) => {
+            const rec = this.store.getRecord(recordId);
+            if (!rec || seen.has(recordId)) return [];
+            seen.add(recordId);
+            // Reviewed values (dates, titles…) come from the library record; lists stay as written in this document.
+            const lists = Object.fromEntries(Object.entries(own).filter(([k, v]) => Array.isArray(v) && k !== 'links'));
+            return [{ ...rec, data: { ...rec.data, ...lists } } as typeof rec];
+          });
+          const name = f.filename.replace(/\.(docx|pdf|pages|txt|md)$/i, '');
+          const cv = this.store.createCv({ name, lang: f.lang, document: buildDocumentFromLibrary(records, f.lang), description: `Imported from ${f.filename}` });
+          cvs.push({ id: cv.id, name: cv.name });
+        }
       }
       for (const f of batch.files) {
         if (!f.sourceId || !this.store.getSource(f.sourceId)) continue;
@@ -296,7 +328,7 @@ export class ImportService {
       throw e;
     }
     const skipped = groups.filter((g) => decisions[g.id]?.skip).length;
-    return { created, updated, skipped };
+    return { created, updated, skipped, cvs };
   }
 
   /** Cancels an import: originals added by this batch are removed again. */

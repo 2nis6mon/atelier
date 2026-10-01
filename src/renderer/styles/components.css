@@ -469,13 +469,17 @@
 .toasts {
   position: fixed;
   left: 50%;
-  bottom: 22px;
+  bottom: 50px;
   z-index: 1100;
   display: flex;
   flex-direction: column;
   gap: 8px;
   transform: translateX(-50%);
   pointer-events: none;
+}
+/* In the editor, stay above the dock. */
+body:has(.ws) .toasts {
+  bottom: 100px;
 }
 .toast {
   display: flex;

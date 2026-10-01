@@ -14,10 +14,31 @@ interface DialogProps {
   closeLabel?: string;
 }
 
+/** Open dialogs, topmost last: Escape closes only the topmost one. */
+const openDialogs: symbol[] = [];
+
 /** Modal sheet with focus trap, Escape to close and focus restoration. */
 export function Dialog({ title, subtitle, onClose, children, footer, headerExtra, narrow, testId, closeLabel = 'Close' }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
   const opener = useRef<Element | null>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+
+  // Escape works even when focus was lost (e.g. the focused button was replaced).
+  useEffect(() => {
+    const id = Symbol('dialog');
+    openDialogs.push(id);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || openDialogs[openDialogs.length - 1] !== id) return;
+      e.preventDefault();
+      close.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      openDialogs.splice(openDialogs.indexOf(id), 1);
+    };
+  }, []);
 
   useEffect(() => {
     opener.current = document.activeElement;
@@ -30,11 +51,6 @@ export function Dialog({ title, subtitle, onClose, children, footer, headerExtra
   }, []);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      onClose();
-      return;
-    }
     if (e.key !== 'Tab') return;
     const focusables = [...(ref.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), textarea, select, [tabindex]:not([tabindex="-1"])') ?? [])].filter((x) => x.offsetParent !== null);
     if (focusables.length === 0) return;

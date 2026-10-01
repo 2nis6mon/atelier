@@ -45,7 +45,7 @@ function ImportFlow({ onClose }: { onClose: () => void }) {
   const [selectedFile, setSelectedFile] = useState<number>(0);
   const [decisions, setDecisions] = useState<Record<string, GroupDecisionInput>>({});
   const [over, setOver] = useState(false);
-  const [done, setDone] = useState<{ created: number; updated: number; skipped: number } | null>(null);
+  const [done, setDone] = useState<{ created: number; updated: number; skipped: number; cvs: Array<{ id: string; name: string }> } | null>(null);
   const info = useApp((s) => s.info);
 
   useEffect(() => {
@@ -98,12 +98,13 @@ function ImportFlow({ onClose }: { onClose: () => void }) {
     return g.conflicts.some((c) => d.choices[c.field] === undefined && !(d.edits && c.field in d.edits));
   });
   const readable = (batch?.files ?? []).filter((f) => f.sourceId && f.candidates.length > 0);
+  const [createCvs, setCreateCvs] = useState(true);
 
   const commit = async () => {
     if (!batch) return;
     setBusy('Saving to your library…');
     try {
-      const r = await unwrap(api().importer.commit(batch.id, decisions));
+      const r = await unwrap(api().importer.commit(batch.id, decisions, { createCvs }));
       setDone(r);
       setStep('save');
     } catch (e) {
@@ -160,9 +161,15 @@ function ImportFlow({ onClose }: { onClose: () => void }) {
               </span>
             ) : null}
             {step === 'review' ? (
-              <button type="button" className="btn" onClick={() => setStep('files')}>
-                Back
-              </button>
+              <>
+                <label className="checkbox small" title="Each document also becomes a CV you can edit. The library records are shared.">
+                  <input type="checkbox" checked={createCvs} onChange={(e) => setCreateCvs(e.target.checked)} data-testid="create-cvs" />
+                  Also create an editable CV from each document
+                </label>
+                <button type="button" className="btn" onClick={() => setStep('files')}>
+                  Back
+                </button>
+              </>
             ) : null}
             {step === 'files' ? (
               <button type="button" className="btn btn-primary" disabled={!readable.length || Boolean(busy)} onClick={() => setStep('review')} data-testid="to-review">
@@ -183,7 +190,17 @@ function ImportFlow({ onClose }: { onClose: () => void }) {
           <h2 className="display" style={{ fontSize: 24 }}>Library updated</h2>
           <p>
             {done.created} new record{done.created === 1 ? '' : 's'}, {done.updated} updated with new sources{done.skipped ? `, ${done.skipped} skipped` : ''}.
+            {done.cvs.length ? ` ${done.cvs.length} editable CV${done.cvs.length === 1 ? '' : 's'} created.` : ''}
           </p>
+          {done.cvs.length ? (
+            <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+              {done.cvs.map((c) => (
+                <button key={c.id} type="button" className="btn btn-sm" onClick={() => { onClose(); navigate({ name: 'workspace', id: c.id, mode: 'content' }); }}>
+                  <Icon name="doc" size={13} /> Open {c.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : step === 'files' ? (
         <div className="import-grid">

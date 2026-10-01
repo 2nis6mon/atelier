@@ -23,11 +23,12 @@ export function ExperienceTab() {
   const [findings, setFindings] = useState<ConsolidationFinding[] | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
   const importOpen = useApp((s) => s.importOpen);
+  const dataVersion = useApp((s) => s.dataVersion);
 
   const load = useCallback(async () => setRecords(await api().library.records()), []);
   useEffect(() => {
     void load();
-  }, [load, importOpen]);
+  }, [load, importOpen, dataVersion]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -291,7 +292,7 @@ function RecordEditor({ record, onSaved, onDelete, onMerge }: { record: LibraryR
         <div className="row" style={{ flexWrap: 'wrap' }}>
           {record.sources.length === 0 ? <span className="small muted">Added manually</span> : null}
           {record.sources.map((s) => (
-            <span key={s.sourceId} className="chip outline">
+            <span key={s.sourceId} className="chip outline" data-testid="record-source">
               <Icon name="file" size={12} /> {s.label}
             </span>
           ))}

@@ -27,9 +27,10 @@ export function ApplicationsBoard() {
     setApps(a);
     setCvs(c);
   }, []);
+  const dataVersion = useApp((s) => s.dataVersion);
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, dataVersion]);
 
   const move = async (app: ApplicationSummary, to: AppStatus) => {
     if (app.status === to) return;

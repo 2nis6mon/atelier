@@ -19,6 +19,7 @@
 .cv-pages.print .cv-sheet {
   border-radius: 0;
   box-shadow: none;
+  background: #fff;
 }
 .cv-side-band {
   position: absolute;

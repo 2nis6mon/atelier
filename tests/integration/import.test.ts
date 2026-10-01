@@ -190,6 +190,39 @@ describe('import service', () => {
     expect(() => service.commit(b2.id, {})).toThrow(/no longer pending/);
   });
 
+  it('optionally creates one editable CV per imported document, built only from its own records', async () => {
+    const batch = await service.importPaths([join(FIX, 'CV_FR.docx'), join(FIX, 'CV_EN.pdf')]);
+    const decisions: Record<string, { mode: 'merge'; choices: Record<string, number> }> = {};
+    for (const g of batch.groups) decisions[g.id] = { mode: 'merge', choices: Object.fromEntries(g.conflicts.map((c) => [c.field, 0])) };
+    const r = service.commit(batch.id, decisions, { createCvs: true });
+    expect(r.cvs.map((c) => c.name)).toEqual(['CV_FR', 'CV_EN']);
+    const fr = store.getCv(r.cvs[0].id)!;
+    const en = store.getCv(r.cvs[1].id)!;
+    expect(fr.lang).toBe('fr');
+    expect(en.lang).toBe('en');
+    expect(fr.document.header.fullName).toBe('Camille Laurent');
+    const text = (d: typeof fr.document) => JSON.stringify(d.blocks);
+    expect(text(fr.document)).toContain('Atelier Nova');
+    expect(text(fr.document)).not.toContain('Frontend Developer');
+    expect(text(en.document)).toContain('Frontend Developer');
+    // merged records keep each document's own bullets in its CV
+    const b3 = await service.importPaths([join(FIX, 'CV_2024.pdf')]);
+    const d3: Record<string, { mode: 'merge'; choices: Record<string, number> }> = {};
+    for (const g of b3.groups) d3[g.id] = { mode: 'merge', choices: Object.fromEntries(g.conflicts.map((c) => [c.field, 0])) };
+    const r3 = service.commit(b3.id, d3, { createCvs: true });
+    const nova = store.listRecords('experience').find((x) => (x.data as { company: string }).company === 'Atelier Nova' && x.lang === 'fr')!;
+    const cv2024 = store.getCv(r3.cvs[0].id)!;
+    const novaItem = cv2024.document.blocks.flatMap((b) => b.items).find((i) => i.kind === 'entry' && i.org === 'Atelier Nova');
+    expect(novaItem && novaItem.kind === 'entry' ? novaItem.bullets.length : 0).toBeLessThan((nova.data as { bullets: string[] }).bullets.length);
+    store.deleteCv(r3.cvs[0].id);
+    // default: no CVs are created
+    const b2 = await service.importPaths([join(FIX, 'CV_2024.pdf')]);
+    const d2: Record<string, { mode: 'merge'; choices: Record<string, number> }> = {};
+    for (const g of b2.groups) d2[g.id] = { mode: 'merge', choices: Object.fromEntries(g.conflicts.map((c) => [c.field, 0])) };
+    expect(service.commit(b2.id, d2).cvs).toEqual([]);
+    expect(store.listCvs()).toHaveLength(2);
+  });
+
   it('handles unsupported, missing, OCR and Pages conversion paths', async () => {
     const scan = join(dir.path, 'scan.pdf');
     await blankPdf(scan);

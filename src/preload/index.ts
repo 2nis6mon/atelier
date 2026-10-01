@@ -27,6 +27,7 @@ const api: AtelierApi = {
     onAccessibilityChange: (cb) => listen<[{ reduceTransparency: boolean; reduceMotion: boolean }]>(IPC.accessibility, cb),
     setWindowTitle: (title) => ipcRenderer.send(IPC.setTitle, title),
   },
+  recovery: ns('recovery', ['write', 'read', 'clear']),
   settings: ns('settings', ['get', 'update']),
   library: ns('library', ['records', 'createRecord', 'updateRecord', 'deleteRecord', 'usage', 'mergeRecords', 'sources', 'deleteSource', 'openSource']),
   importer: {

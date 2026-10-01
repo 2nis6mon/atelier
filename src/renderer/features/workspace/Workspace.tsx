@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { AiRequestInput } from '../../../shared/types';
 import { api, unwrap } from '../../api';
 import { navigate, type WorkspaceMode } from '../../router';
@@ -66,8 +67,8 @@ export function Workspace({ id, mode }: { id: string; mode: WorkspaceMode }) {
   const application = useWorkspace((s) => s.application);
   const recovery = useWorkspace((s) => s.recovery);
   const reviewIndex = useWorkspace((s) => s.reviewIndex);
-  const undoInfo = useWorkspace(selectUndo);
-  const redoInfo = useWorkspace(selectRedo);
+  const undoInfo = useWorkspace(useShallow(selectUndo));
+  const redoInfo = useWorkspace(useShallow(selectRedo));
   const panel = useAssistant((s) => s.panel);
   const [exporting, setExporting] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(() => window.innerWidth > 960);

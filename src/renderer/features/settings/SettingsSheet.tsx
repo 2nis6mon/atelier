@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useCallback, useEffect, useState } from 'react';
 import type { BackupInspectionView } from '../../../shared/api';
 import type { MotionPref, ProviderId, ProviderStatus, TransparencyPref } from '../../../shared/types';
@@ -323,6 +324,7 @@ function StorageSettings() {
       const r = await unwrap(api().backup.restore({ path: inspection.path, mode, choices }));
       if (r.mode === 'merge') {
         toast({ kind: 'ok', text: `Restored: ${r.added ?? 0} added, ${r.replaced ?? 0} replaced, ${r.kept ?? 0} kept as they were.` });
+        useApp.getState().bumpData();
         setInspection(null);
       } else {
         toast({ kind: 'ok', text: 'Backup restored. Your previous data was kept as a safety copy.' });
@@ -434,7 +436,7 @@ function StorageSettings() {
 function AccessibilitySettings() {
   const settings = useApp((s) => s.settings);
   const update = useApp((s) => s.updateSettings);
-  const sys = useApp((s) => ({ m: s.systemReduceMotion, t: s.systemReduceTransparency }));
+  const sys = useApp(useShallow((s) => ({ m: s.systemReduceMotion, t: s.systemReduceTransparency })));
   return (
     <div className="col" style={{ gap: 16 }} data-testid="accessibility-settings">
       <div className="field">

@@ -20,6 +20,9 @@ interface AppState {
   toasts: Toast[];
   settingsOpen: false | 'ai' | 'storage' | 'accessibility' | 'about';
   importOpen: boolean;
+  /** Bumped when data changes outside the current view (e.g. a backup was restored). */
+  dataVersion: number;
+  bumpData(): void;
   load(): Promise<void>;
   updateSettings(patch: Partial<Settings>): Promise<void>;
   toast(t: Omit<Toast, 'id'>): void;
@@ -40,6 +43,10 @@ export const useApp = create<AppState>((set, get) => ({
   toasts: [],
   settingsOpen: false,
   importOpen: false,
+  dataVersion: 0,
+  bumpData() {
+    set({ dataVersion: get().dataVersion + 1 });
+  },
   async load() {
     const [info, settings] = await Promise.all([api().app.info(), api().settings.get()]);
     set({ info, settings, systemReduceMotion: info.reduceMotion, systemReduceTransparency: info.reduceTransparency });

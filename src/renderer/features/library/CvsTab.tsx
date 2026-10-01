@@ -17,6 +17,7 @@ export function CvsTab({ onNewCv }: { onNewCv: () => void }) {
   const [remove, setRemove] = useState<CvSummary | null>(null);
   const setImportOpen = useApp((s) => s.setImportOpen);
   const importOpen = useApp((s) => s.importOpen);
+  const dataVersion = useApp((s) => s.dataVersion);
 
   const load = useCallback(async () => {
     const list = await api().cvs.list();
@@ -28,7 +29,7 @@ export function CvsTab({ onNewCv }: { onNewCv: () => void }) {
 
   useEffect(() => {
     void load();
-  }, [load, importOpen]);
+  }, [load, importOpen, dataVersion]);
 
   const duplicate = async (c: CvSummary) => {
     try {
@@ -43,18 +44,35 @@ export function CvsTab({ onNewCv }: { onNewCv: () => void }) {
   if (cvs === null) return <div className="empty" aria-busy="true"><div className="spinner" /></div>;
 
   if (cvs.length === 0) {
+    const hasLibrary = sources.length > 0;
     return (
       <div className="empty surface" style={{ padding: 56 }} data-testid="library-empty">
         <Icon name="doc" size={34} />
-        <h2 className="display" style={{ fontSize: 24 }}>Your library is empty</h2>
-        <p style={{ maxWidth: 460 }}>Import the CVs you already have (Word, PDF or Pages). Atelier keeps the originals and shows you everything it extracts before saving.</p>
+        <h2 className="display" style={{ fontSize: 24 }}>{hasLibrary ? 'No CVs yet' : 'Your library is empty'}</h2>
+        <p style={{ maxWidth: 480 }}>
+          {hasLibrary
+            ? `Your library holds what was imported from ${sources.length} document${sources.length === 1 ? '' : 's'}. Create a CV from it — you choose the language and what to include.`
+            : 'Import the CVs you already have (Word, PDF or Pages). Atelier keeps the originals and shows you everything it extracts before saving.'}
+        </p>
         <div className="row">
-          <button type="button" className="btn btn-primary btn-lg" onClick={() => setImportOpen(true)} data-testid="import-first">
-            <Icon name="import" /> Import first CV
-          </button>
-          <button type="button" className="btn btn-lg" onClick={onNewCv}>
-            Start from scratch
-          </button>
+          {hasLibrary ? (
+            <button type="button" className="btn btn-primary btn-lg" onClick={onNewCv} data-testid="create-first-cv">
+              <Icon name="plus" /> Create a CV
+            </button>
+          ) : (
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => setImportOpen(true)} data-testid="import-first">
+              <Icon name="import" /> Import first CV
+            </button>
+          )}
+          {hasLibrary ? (
+            <button type="button" className="btn btn-lg" onClick={() => setImportOpen(true)}>
+              Import more
+            </button>
+          ) : (
+            <button type="button" className="btn btn-lg" onClick={onNewCv}>
+              Start from scratch
+            </button>
+          )}
         </div>
       </div>
     );

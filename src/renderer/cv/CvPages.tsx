@@ -268,7 +268,7 @@ export function CvPages({ doc, editable = false, print = false, onFieldChange, o
     <div ref={root} className={`cv-pages template-${doc.template}${print ? ' print' : ''}${showZones ? ' show-zones' : ''}`} style={style} lang={doc.lang} data-pages={layout.pages}>
       {Array.from({ length: layout.pages }, (_, i) => (
         <div key={i} className="cv-sheet" style={{ top: i * stride, height: PAGE_H }} aria-hidden="true">
-          {sidebar ? <div className="cv-side-band" style={{ right: margin - 12, width: sideW + 24, top: 0, bottom: 0 }} /> : null}
+          {sidebar ? <div className="cv-side-band" style={{ right: 0, width: sideW + margin + 12, top: 0, bottom: 0 }} /> : null}
           {!print ? <span className="cv-page-number">{i + 1}</span> : null}
         </div>
       ))}

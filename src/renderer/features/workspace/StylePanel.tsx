@@ -38,15 +38,19 @@ export function PageInfo() {
         return (
           <div key={c.blockId} className="notice warn" data-testid="overflow-alert">
             <Icon name="warning" size={15} />
-            <span className="grow">
-              {b.title} continues on page {c.pages[c.pages.length - 1]}.
+            <span className="grow col" style={{ gap: 8 }}>
+              <span>
+                “{b.title}” continues on page {c.pages[c.pages.length - 1]}.
+              </span>
+              <span className="row" style={{ flexWrap: 'wrap', gap: 6 }}>
+                <button type="button" className="btn btn-sm" onClick={() => scrollToPage(c.pages[0] + 1)}>
+                  Review page break
+                </button>
+                <button type="button" className="btn btn-sm" onClick={() => edit((d) => togglePageBreak(d, b.id), 'Page break')} title="Start this section on a new page">
+                  {doc.pageBreaks.includes(b.id) ? 'Remove break' : 'Start on a new page'}
+                </button>
+              </span>
             </span>
-            <button type="button" className="btn btn-sm" onClick={() => scrollToPage(c.pages[0] + 1)}>
-              Review page break
-            </button>
-            <button type="button" className="btn btn-sm" onClick={() => edit((d) => togglePageBreak(d, b.id), 'Page break')} title="Start this section on a new page">
-              {doc.pageBreaks.includes(b.id) ? 'Remove break' : 'New page'}
-            </button>
           </div>
         );
       })}

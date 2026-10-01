@@ -66,27 +66,49 @@ let savingPromise: Promise<boolean> | null = null;
 
 const recoveryKey = (id: string) => `atelier.recovery.${id}`;
 
+let journalTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Unsaved changes are journaled twice: synchronously in the renderer, and (throttled)
+ * by the main process to a file, which survives a crash of the whole app.
+ */
 function writeRecovery(id: string, doc: CvDocument) {
+  const entry = { document: doc, at: new Date().toISOString() };
   try {
-    localStorage.setItem(recoveryKey(id), JSON.stringify({ document: doc, at: new Date().toISOString() }));
+    localStorage.setItem(recoveryKey(id), JSON.stringify(entry));
   } catch {
-    // storage unavailable: the in-memory draft is still kept
+    // storage unavailable: the main-process journal still works
   }
+  if (journalTimer) clearTimeout(journalTimer);
+  journalTimer = setTimeout(() => {
+    journalTimer = null;
+    void api().recovery.write(id, entry.document, entry.at).catch(() => undefined);
+  }, 80);
 }
 function clearRecovery(id: string) {
+  if (journalTimer) {
+    clearTimeout(journalTimer);
+    journalTimer = null;
+  }
   try {
     localStorage.removeItem(recoveryKey(id));
   } catch {
     // ignore
   }
+  void api().recovery.clear(id).catch(() => undefined);
 }
-function readRecovery(id: string): { document: CvDocument; at: string } | null {
+async function readRecovery(id: string): Promise<{ document: CvDocument; at: string } | null> {
+  let local: { document: CvDocument; at: string } | null = null;
   try {
     const raw = localStorage.getItem(recoveryKey(id));
-    return raw ? (JSON.parse(raw) as { document: CvDocument; at: string }) : null;
+    local = raw ? (JSON.parse(raw) as { document: CvDocument; at: string }) : null;
   } catch {
-    return null;
+    local = null;
   }
+  const journal = await api().recovery.read(id).catch(() => null);
+  if (!local) return journal;
+  if (!journal) return local;
+  return journal.at > local.at ? journal : local;
 }
 
 export const useWorkspace = create<WorkspaceState>((set, get) => {
@@ -142,7 +164,7 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
         api().library.records(),
         cv.applicationId ? api().applications.get(cv.applicationId) : Promise.resolve(null),
       ]);
-      const rec = readRecovery(cvId);
+      const rec = await readRecovery(cvId);
       const recovery = rec && rec.at > cv.updatedAt && documentHash(rec.document) !== documentHash(cv.document) ? rec : null;
       if (!recovery) clearRecovery(cvId);
       set({

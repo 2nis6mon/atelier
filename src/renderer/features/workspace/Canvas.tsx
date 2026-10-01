@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { addBullet, addItem, bulletPath, findItem, getText, itemPath, newBullet, newTextItem, parsePath, removeBullet, setText } from '../../../shared/document';
 import { stripMarkup, toggleStyle } from '../../../shared/markup';
 import type { CvDocument } from '../../../shared/types';
@@ -7,22 +8,30 @@ import { useAssistant } from '../../state/assistant';
 import { useWorkspace } from '../../state/workspace';
 import { Icon } from '../../ui/Icon';
 
+function focusNow(path: string, atEnd: boolean): boolean {
+  const el = document.querySelector<HTMLElement>(`[data-path="${CSS.escape(path)}"]`);
+  if (!el) return false;
+  el.focus();
+  if (atEnd) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+  }
+  return true;
+}
+
+/**
+ * Moves the caret to a field. Structural edits are committed synchronously first
+ * (flushSync), so keys typed right after Enter land in the new field, not the old one.
+ */
 function focusPath(path: string, atEnd = false) {
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLElement>(`[data-path="${CSS.escape(path)}"]`);
-      if (!el) return;
-      el.focus();
-      if (atEnd) {
-        const r = document.createRange();
-        r.selectNodeContents(el);
-        r.collapse(false);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(r);
-      }
-    }),
-  );
+  if (focusNow(path, atEnd)) return;
+  requestAnimationFrame(() => {
+    if (!focusNow(path, atEnd)) requestAnimationFrame(() => focusNow(path, atEnd));
+  });
 }
 
 /** Plain-text offsets of the current selection inside an editable field. */
@@ -109,7 +118,7 @@ export function Canvas({ doc, editable, onRewrite, onTranslate, overlay }: { doc
       if (!p) return;
       if (p.type === 'bullet') {
         const b = newBullet('');
-        edit((d) => addBullet(d, p.blockId, p.itemId, b, p.bulletId), 'Add bullet');
+        flushSync(() => edit((d) => addBullet(d, p.blockId, p.itemId, b, p.bulletId), 'Add bullet'));
         focusPath(bulletPath(p.blockId, p.itemId, b.id));
       } else if (p.type === 'item' && (p.field === 'text' || p.field === 'title' || p.field === 'org' || p.field === 'location')) {
         const item = findItem(useWorkspace.getState().history!.present, p.blockId, p.itemId);
@@ -118,12 +127,12 @@ export function Canvas({ doc, editable, onRewrite, onTranslate, overlay }: { doc
             focusPath(bulletPath(p.blockId, p.itemId, item.bullets[0].id));
           } else {
             const b = newBullet('');
-            edit((d) => addBullet(d, p.blockId, p.itemId, b), 'Add bullet');
+            flushSync(() => edit((d) => addBullet(d, p.blockId, p.itemId, b), 'Add bullet'));
             focusPath(bulletPath(p.blockId, p.itemId, b.id));
           }
         } else if (item?.kind === 'text') {
           const t = newTextItem('');
-          edit((d) => addItem(d, p.blockId, t, p.itemId), 'Add paragraph');
+          flushSync(() => edit((d) => addItem(d, p.blockId, t, p.itemId), 'Add paragraph'));
           focusPath(itemPath(p.blockId, t.id, 'text'));
         } else {
           (document.activeElement as HTMLElement | null)?.blur();
@@ -142,7 +151,7 @@ export function Canvas({ doc, editable, onRewrite, onTranslate, overlay }: { doc
       const item = findItem(useWorkspace.getState().history!.present, p.blockId, p.itemId);
       if (item?.kind !== 'entry') return;
       const idx = item.bullets.findIndex((b) => b.id === p.bulletId);
-      edit((d) => removeBullet(d, p.blockId, p.itemId, p.bulletId), 'Delete bullet');
+      flushSync(() => edit((d) => removeBullet(d, p.blockId, p.itemId, p.bulletId), 'Delete bullet'));
       const prev = item.bullets[idx - 1];
       if (prev) focusPath(bulletPath(p.blockId, p.itemId, prev.id), true);
     },

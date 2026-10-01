@@ -49,6 +49,7 @@ export function VersionsMode({ cvId }: { cvId: string }) {
   const shown: CvDocument = sel.kind === 'draft' ? draft : sel.version.document;
   const v = sel.kind === 'version' ? sel.version : null;
   const app = v?.applicationId ? apps[v.applicationId] : null;
+  const sentCtx = v?.sentContext ?? (app ? { company: app.company, role: app.role, offerText: app.offerText, offerUrl: app.offerUrl, notes: app.notes } : null);
 
   const saveNow = async () => {
     try {
@@ -123,12 +124,13 @@ export function VersionsMode({ cvId }: { cvId: string }) {
               )}
             </div>
             <p className="small muted">{new Date(v.createdAt).toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short' })}</p>
-            {app ? (
-              <div className="surface" style={{ padding: 10 }}>
-                <strong>{app.company}</strong>
-                <div className="small muted">{app.role}</div>
-                {app.offerText ? <p className="small offer-preview" style={{ marginTop: 6 }}>{app.offerText}</p> : null}
-                {app.notes ? <p className="small" style={{ marginTop: 6 }}><strong>Notes:</strong> {app.notes}</p> : null}
+            {sentCtx ? (
+              <div className="surface" style={{ padding: 10 }} data-testid="version-application">
+                <strong>{sentCtx.company}</strong>
+                <div className="small muted">{sentCtx.role}</div>
+                {v.sentContext ? <div className="small muted" style={{ marginTop: 4 }}>Offer and notes as they were when sent</div> : null}
+                {sentCtx.offerText ? <p className="small offer-preview" style={{ marginTop: 6 }}>{sentCtx.offerText}</p> : null}
+                {sentCtx.notes ? <p className="small" style={{ marginTop: 6 }}><strong>Notes:</strong> {sentCtx.notes}</p> : null}
               </div>
             ) : null}
             {v.files.length ? (

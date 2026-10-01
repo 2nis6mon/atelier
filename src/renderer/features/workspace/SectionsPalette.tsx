@@ -133,6 +133,11 @@ export function SectionsPalette({ mode, onClose }: { mode: WorkspaceMode; onClos
             >
               {layout ? <Icon name="grip" size={14} className="grip" /> : <Icon name={TYPE_ICON[b.type]} size={15} />}
               <span className="grow ellipsis">{b.title || BLOCK_TYPE_LABELS[b.type]}</span>
+              {b.items.every((it) => it.hidden) && !b.hidden ? (
+                <span className="chip outline" title="This section has no content yet, so it does not appear in the CV. Add content from your library.">
+                  Empty
+                </span>
+              ) : null}
               {doc.pageBreaks.includes(b.id) ? <span className="chip" title="Starts on a new page">⤓</span> : null}
               <button
                 type="button"

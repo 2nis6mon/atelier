@@ -137,6 +137,12 @@ export interface AtelierApi {
     revealDataFolder(): Promise<void>;
     setWindowTitle(title: string): void;
   };
+  /** Crash-recovery journal for unsaved editor changes (kept outside the data folder). */
+  recovery: {
+    write(cvId: string, document: CvDocument, at: string): Promise<void>;
+    read(cvId: string): Promise<{ document: CvDocument; at: string } | null>;
+    clear(cvId: string): Promise<void>;
+  };
   settings: {
     get(): Promise<Settings>;
     update(patch: Partial<Settings>): Promise<Result<Settings>>;
@@ -163,7 +169,7 @@ export interface AtelierApi {
     convertPages(batchId: string, sourceId: string): Promise<Result<ImportBatchView>>;
     attachConversion(batchId: string, sourceId: string): Promise<Result<ImportBatchView>>;
     removeFile(batchId: string, sourceId: string): Promise<Result<ImportBatchView>>;
-    commit(batchId: string, decisions: Record<string, GroupDecisionInput>): Promise<Result<{ created: number; updated: number; skipped: number }>>;
+    commit(batchId: string, decisions: Record<string, GroupDecisionInput>, opts?: { createCvs?: boolean }): Promise<Result<{ created: number; updated: number; skipped: number; cvs: Array<{ id: string; name: string }> }>>;
     discard(batchId: string): Promise<Result<void>>;
   };
   cvs: {
