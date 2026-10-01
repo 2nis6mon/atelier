@@ -31,13 +31,15 @@ export function MergeDialog({ records, initialIds, onClose, onMerged }: { record
     const fieldSources: Record<string, { sourceId: string; label: string }> = {};
     for (const c of group.conflicts) {
       const opt = c.options[choices[c.field]];
-      let v = opt.value;
-      if (c.field === 'end' && v === '__present__') {
-        v = '';
-        data.current = true;
-      } else if (c.field === 'end') data.current = false;
-      data[c.field] = v;
+      data[c.field] = opt.value;
       fieldSources[c.field] = opt.sources[0];
+    }
+    // "Present" is compared as a pseudo end date; store it as current = true.
+    if ('end' in data && (first.kind === 'experience' || first.kind === 'project')) {
+      if (data.end === '__present__') {
+        data.end = '';
+        if (first.kind === 'experience') data.current = true;
+      } else if (first.kind === 'experience') data.current = false;
     }
     try {
       const kept = await unwrap(api().library.mergeRecords(ids[0], ids.slice(1), data, fieldSources));

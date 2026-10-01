@@ -125,8 +125,13 @@
 }
 .cv-card-menu {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 18px;
+  right: 18px;
+  z-index: 2; /* above the thumbnail, which is a positioned element */
+}
+.cv-card-menu .icon-btn {
+  background: var(--glass-bg-strong);
+  box-shadow: 0 1px 3px rgba(32, 43, 59, 0.12);
 }
 .cv-thumb {
   position: relative;

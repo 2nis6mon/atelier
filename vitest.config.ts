@@ -2,12 +2,16 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Coverage policy (see docs/TESTING.md):
-//  - Global: ≥80% lines/functions/statements, ≥75% branches over all
-//    instrumentable application code in src/.
-//  - Critical logic (proposals, versions/sent immutability, history, storage
-//    integrity, backup/restore): ≥90% lines, enforced per file.
-//  - Excluded (documented): process bootstrap files that only wire Electron
-//    platform APIs together; they are exercised by the E2E suite instead.
+//  - Two suites measure the same sources: this one (unit + integration +
+//    component tests, Node/jsdom) and the end-to-end suite (Playwright driving
+//    the built app; Chromium and Node V8 coverage mapped back to src/).
+//  - scripts/coverage-gate.mjs merges them per file and per metric, keeping the
+//    higher of the two (a lower bound of their true union), and enforces the
+//    global gate: ≥80% lines/functions/statements and ≥75% branches over all
+//    of src/, with no source file left unmeasured.
+//  - Critical logic (proposals, versions, history, database and storage
+//    integrity, backup/restore) must reach ≥90% lines here, per file, from
+//    unit/integration tests alone.
 const CRITICAL = { lines: 90, functions: 85, branches: 75, statements: 90 };
 
 export default defineConfig({
@@ -44,22 +48,11 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reporter: ['text-summary', 'json-summary', 'html', 'lcov'],
-      reportsDirectory: 'coverage',
+      reporter: ['text', 'text-summary', 'json-summary', 'json', 'html'],
+      reportsDirectory: 'coverage/unit',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: [
-        'src/**/*.d.ts',
-        // Electron process bootstrap & window wiring (platform API glue, covered by E2E):
-        'src/main/index.ts',
-        'src/main/app/**',
-        'src/preload/**',
-        'src/renderer/main.tsx',
-      ],
+      exclude: ['src/**/*.d.ts'],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        statements: 80,
-        branches: 75,
         'src/shared/proposals.ts': CRITICAL,
         'src/shared/versions.ts': CRITICAL,
         'src/shared/history.ts': CRITICAL,

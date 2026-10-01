@@ -13,8 +13,10 @@ const common = { bundle: true, platform: 'node', format: 'cjs', target: 'node24'
 await build({ ...common, entryPoints: [join(root, 'src/main/index.ts')], outfile: join(dist, 'main/index.cjs'), external: ['electron', 'pdfjs-dist', 'pdfjs-dist/*'] });
 await build({ ...common, entryPoints: [join(root, 'src/preload/index.ts')], outfile: join(dist, 'preload/index.cjs'), external: ['electron'] });
 // ATELIER_DEBUG_BUILD=1 keeps React's development build (readable errors) for local debugging only.
+// ATELIER_COVERAGE_BUILD=1 keeps the production build but unminified, so E2E coverage maps precisely to sources.
 const debug = process.env.ATELIER_DEBUG_BUILD === '1';
-await viteBuild({ configFile: join(root, 'vite.config.ts'), logLevel: 'warn', ...(debug ? { mode: 'development', build: { minify: false } } : {}) });
+const coverage = process.env.ATELIER_COVERAGE_BUILD === '1';
+await viteBuild({ configFile: join(root, 'vite.config.ts'), logLevel: 'warn', ...(debug ? { mode: 'development', build: { minify: false } } : coverage ? { build: { minify: false } } : {}) });
 
 // OCR assets, served locally from app://atelier/ocr/
 const ocr = join(dist, 'renderer/ocr');

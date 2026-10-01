@@ -6,7 +6,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-export type FakeMode = 'rewrite' | 'quota' | 'slow' | 'invalid' | 'unverified';
+export type FakeMode = 'rewrite' | 'quota' | 'slow' | 'invalid' | 'unverified' | 'mixed';
 
 export interface FakeProvider {
   url: string;
@@ -26,8 +26,66 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+interface Parsed {
+  sections: Array<{ id: string; type: string; entries: Array<{ id: string; bullets: string[] }> }>;
+  library: Array<{ id: string; kind: string; label: string }>;
+}
+
+/** Reads the identifiers the app put in the request (S# sections, E# entries, T# texts, L# library records). */
+function parse(user: string): Parsed {
+  const sections: Parsed['sections'] = [];
+  for (const line of user.split('\n')) {
+    const sec = /^(S\d+) section \[(\w+)\]/.exec(line);
+    if (sec) sections.push({ id: sec[1], type: sec[2], entries: [] });
+    const ent = /^\s+(E\d+) (entry|item):/.exec(line);
+    if (ent && sections.length) sections[sections.length - 1].entries.push({ id: ent[1], bullets: [] });
+    const bul = /^\s+(T\d+) bullet:/.exec(line);
+    const cur = sections[sections.length - 1]?.entries.at(-1);
+    if (bul && cur) cur.bullets.push(bul[1]);
+  }
+  const library = [...user.matchAll(/^(L\d+) \[(\w+)\] (.+)$/gm)].map((m) => ({ id: m[1], kind: m[2], label: m[3] }));
+  return { sections, library };
+}
+
+/** One suggestion of every kind the review screen handles. */
+function mixed(user: string) {
+  const { sections, library } = parse(user);
+  const xp = sections.find((s) => s.type === 'experience');
+  const first = xp?.entries[0];
+  const bullets = [...user.matchAll(/^\s+(T\d+) bullet: (.+)$/gm)].map((m) => ({ id: m[1], text: m[2].trim() }));
+  const out: Array<Record<string, unknown>> = [];
+  if (bullets[0]) out.push({ type: 'rewrite', target: bullets[0].id, text: bullets[0].text.replace(/^Je /, 'Au quotidien, je '), explanation: 'More direct.', evidence: [bullets[0].id] });
+  if (first) out.push({ type: 'add_bullet', entry: first.id, after: first.bullets[0], text: 'Je documente les composants React et TypeScript.', explanation: 'Uses skills already listed.', evidence: [first.id] });
+  if (first && first.bullets.length > 1) out.push({ type: 'remove', target: first.bullets[first.bullets.length - 1], explanation: 'Less relevant for this offer.' });
+  if (xp && xp.entries.length > 1) out.push({ type: 'reorder', section: xp.id, order: [...xp.entries].reverse().map((e) => e.id), explanation: 'Most relevant first.' });
+  const lib = library.find((l) => l.kind === 'skill') ?? library[0];
+  if (lib) out.push({ type: 'add_from_library', record: lib.id, section: sections.find((s) => s.type === 'skills')?.id, explanation: 'Relevant skill from your library.', evidence: [lib.id] });
+  out.push({ type: 'question', text: 'Avez-vous mené un projet de design system ?', explanation: 'The offer asks for it; nothing in your documents says so.' });
+  if (bullets[1]) out.push({ type: 'comment', target: bullets[1].id, text: 'Ce point pourrait préciser le contexte.', explanation: '' });
+  return { summary: `${out.length} suggestions of different kinds.`, suggestions: out };
+}
+
+/** Library check: reports records sharing the same first word as possible duplicates/contradictions. */
+function consolidation(user: string) {
+  const { library } = parse(user);
+  const groups = new Map<string, string[]>();
+  for (const l of library) {
+    const key = l.label.split(/[\s·—(]/)[0].toLowerCase();
+    groups.set(key, [...(groups.get(key) ?? []), l.id]);
+  }
+  const suggestions = [...groups.values()]
+    .filter((ids) => ids.length > 1)
+    .flatMap((ids) => [
+      { type: 'duplicate', records: ids, explanation: 'These records look like the same position.' },
+      { type: 'contradiction', records: ids, field: 'start', explanation: 'The start dates differ.' },
+    ]);
+  return { summary: `${suggestions.length} findings.`, suggestions };
+}
+
 /** Deterministic rewrites for the first bullets found in the request (no new facts). */
 export function suggestionsFor(user: string, mode: FakeMode) {
+  if (user.includes('Review the LIBRARY records for duplicates')) return consolidation(user);
+  if (mode === 'mixed') return mixed(user);
   const bullets = [...user.matchAll(/^\s+(T\d+) bullet: (.+)$/gm)].map((m) => ({ id: m[1], text: m[2].trim() }));
   const fields = [...user.matchAll(/^\s+(T\d+) field: (.+)$/gm)].map((m) => ({ id: m[1], text: m[2].trim() }));
   const pool = bullets.length ? bullets : fields;

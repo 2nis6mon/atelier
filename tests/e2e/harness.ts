@@ -3,7 +3,7 @@
 // main process for the duration of a test, because they cannot be driven.
 
 import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,9 @@ import type { FakeProvider } from './fakeProvider';
 export const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 export const FIXTURES = join(ROOT, 'tests', 'fixtures');
 export const SHOTS = process.env.ATELIER_SCREENSHOTS ?? join(ROOT, 'test-results', 'screenshots');
+/** When set, V8 coverage of the renderer, preload and main process is written there (see scripts/coverage-e2e.mjs). */
+const COVERAGE_DIR = process.env.ATELIER_APP_PATH ? undefined : process.env.ATELIER_COVERAGE_DIR;
+let coverageRun = 0;
 
 export interface Session {
   app: ElectronApplication;
@@ -35,10 +38,22 @@ export async function launch(opts: { dataDir?: string; size?: [number, number] }
   const packaged = process.env.ATELIER_APP_PATH;
   const app = await electron.launch({
     ...(packaged ? { executablePath: packaged, args: [] } : { args: [...(process.platform === 'linux' ? ['--no-sandbox'] : []), join(ROOT, 'dist', 'main', 'index.cjs')] }),
-    env: { ...process.env, ATELIER_E2E: '1', ATELIER_DATA_DIR: dataDir },
+    env: { ...process.env, ATELIER_E2E: '1', ATELIER_DATA_DIR: dataDir, ...(COVERAGE_DIR ? { NODE_V8_COVERAGE: join(COVERAGE_DIR, 'main') } : {}) },
     timeout: 60_000,
   });
   const win = await app.firstWindow();
+  if (COVERAGE_DIR) {
+    // Count from the very first script: start coverage, then reload the window.
+    await win.coverage.startJSCoverage({ resetOnNavigation: false });
+    await win.reload();
+  }
+  const saveCoverage = async () => {
+    if (!COVERAGE_DIR) return;
+    const entries = await win.coverage.stopJSCoverage().catch(() => []);
+    const keep = entries.filter((e) => e.url.startsWith('app://atelier/assets/') || e.url.endsWith('/preload/index.cjs'));
+    mkdirSync(join(COVERAGE_DIR, 'renderer'), { recursive: true });
+    writeFileSync(join(COVERAGE_DIR, 'renderer', `${process.pid}-${Date.now()}-${coverageRun++}.json`), JSON.stringify(keep));
+  };
   const errors: string[] = [];
   win.on('pageerror', (e) => errors.push(e.message));
   const [w, h] = opts.size ?? [1320, 860];
@@ -65,9 +80,11 @@ export async function launch(opts: { dataDir?: string; size?: [number, number] }
       }, path),
     close: async () => {
       expect(errors, 'uncaught renderer errors').toEqual([]);
+      await saveCoverage();
       await app.close();
     },
     kill: async () => {
+      await saveCoverage();
       app.process().kill('SIGKILL');
       await new Promise((r) => setTimeout(r, 500));
     },
@@ -77,7 +94,7 @@ export async function launch(opts: { dataDir?: string; size?: [number, number] }
 export const ALL_FIXTURES = ['CV_FR.docx', 'CV_2024.pdf', 'CV_EN.pdf', 'CV_2015.pages'];
 
 /** Imports files through the Import sheet, choosing the option at `pick` for every conflict. */
-export async function importFiles(s: Session, files: string[], opts: { pick?: number; createCvs?: boolean; fromWelcome?: boolean; shots?: string } = {}) {
+export async function importFiles(s: Session, files: string[], opts: { pick?: number; separate?: boolean; createCvs?: boolean; fromWelcome?: boolean; shots?: string } = {}) {
   const { win } = s;
   await s.stubOpen(files.map((f) => join(FIXTURES, f)));
   await win.getByTestId(opts.fromWelcome ? 'welcome-import' : 'open-import').click();
@@ -87,6 +104,10 @@ export async function importFiles(s: Session, files: string[], opts: { pick?: nu
   await win.getByTestId('to-review').click();
   const conflicts = win.getByTestId('conflict');
   if (opts.shots) await s.shot(`${opts.shots}-review`);
+  if (opts.separate) {
+    const groups = win.getByTestId('group-card').filter({ has: win.getByTestId('conflict') });
+    while ((await groups.count()) > 0) await groups.first().getByTestId('keep-separate').click();
+  }
   const n = await conflicts.count();
   for (let i = 0; i < n; i++) await conflicts.nth(i).locator('input[type=radio]').nth(opts.pick ?? 0).check();
   if (opts.createCvs === false) await win.getByTestId('create-cvs').uncheck();

@@ -176,7 +176,7 @@ export function ReviewOverlay({ onRun }: { onRun: (r: AiRequestInput) => Promise
         <div className="diff-grid">
           <div className="diff-card">
             <div className="diff-label">
-              <Icon name="doc" size={15} /> Current (in your CV)
+              <Icon name="doc" size={15} /> {stale ? 'When the suggestion was made' : 'Current (in your CV)'}
             </div>
             <div className="diff-text" data-testid="diff-current">
               <Segments segs={diff.left} side="left" />

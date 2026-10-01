@@ -10,7 +10,6 @@ import { validateExportName } from '../../shared/exportNames';
 import type { ExportRequest, ExportResult } from '../../shared/api';
 import type { CvDocument, CvVersion } from '../../shared/types';
 import type { Store } from '../db/store';
-import { StoreError } from '../db/store';
 import { buildDocx } from './docx';
 
 export type PdfRenderer = (doc: CvDocument) => Promise<{ data: Uint8Array; pageCount: number }>;
@@ -89,13 +88,8 @@ export class ExportService {
   markSent(exportId: string, applicationId: string): CvVersion {
     const kept = this.exports.get(exportId);
     if (!kept) throw new ExportError('unknown-export', 'Export the files again before marking them as sent.');
-    try {
-      const version = this.store.recordSent(kept.cvId, applicationId, kept.docHash, kept.files);
-      this.exports.delete(exportId);
-      return version;
-    } catch (e) {
-      if (e instanceof StoreError) throw e;
-      throw e;
-    }
+    const version = this.store.recordSent(kept.cvId, applicationId, kept.docHash, kept.files);
+    this.exports.delete(exportId);
+    return version;
   }
 }

@@ -54,8 +54,12 @@ export function LensTabs<T extends string>({ options, value, onChange, label, va
     }
     el.style.left = `${to.x}px`;
     el.style.width = `${to.w}px`;
-    if (from && typeof el.animate === 'function') {
-      anim.current = el.animate(lensKeyframes(from, to, reduced) as unknown as Keyframe[], { duration: reduced ? 1 : LENS_DURATION_MS, easing: LENS_EASING });
+    // Reduced motion: the lens moves to its new place without any animation.
+    if (from && !reduced && typeof el.animate === 'function') {
+      anim.current = el.animate(lensKeyframes(from, to, false) as unknown as Keyframe[], { duration: LENS_DURATION_MS, easing: LENS_EASING });
+    } else if (anim.current) {
+      anim.current.cancel();
+      anim.current = null;
     }
     last.current = to;
   });
