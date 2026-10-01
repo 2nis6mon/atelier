@@ -52,6 +52,16 @@ function AiSettings() {
   useEffect(() => {
     void load();
   }, [load]);
+  // Check saved API connections once when this panel opens (listing models is not billed).
+  useEffect(() => {
+    void (async () => {
+      const list = await api().providers.list();
+      const pending = list.filter((x) => x.connected && !x.verified && !x.lastError && (x.id === 'anthropic' || x.id === 'openai'));
+      if (!pending.length) return;
+      await Promise.all(pending.map((x) => api().providers.verify(x.id)));
+      await load();
+    })();
+  }, [load]);
 
   const byId = (id: ProviderId) => providers.find((p) => p.id === id);
   return (
@@ -90,8 +100,10 @@ function AiSettings() {
   );
 }
 
+/** "Connected" is shown only after a real check with the provider succeeded in this session. */
 function StatusChip({ p }: { p: ProviderStatus }) {
-  if (p.connected) return <span className="chip ok">{p.verified ? 'Connected · verified' : 'Connected'}</span>;
+  if (p.connected && p.verified) return <span className="chip ok">Connected</span>;
+  if (p.connected) return <span className="chip warn" title={p.lastError ?? 'Use Verify to check the connection.'}>{p.lastError ? 'Not verified' : 'Saved · not verified yet'}</span>;
   return <span className="chip">Not connected</span>;
 }
 

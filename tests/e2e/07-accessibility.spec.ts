@@ -33,6 +33,16 @@ test('keyboard, focus, menus and accessibility preferences', async () => {
     expect(f!.ring, `focus ring on ${f!.tag} (stop ${i})`).toBe(true);
   }
 
+  // Motion follows macOS by default (CI machines may have Reduce motion on), so
+  // force full motion here to observe the lens, and reduced motion further down.
+  const sysMotion = await win.evaluate(() => document.documentElement.dataset.motion);
+  console.log(`System reduced motion: ${sysMotion === 'reduce' ? 'on' : 'off'}`);
+  await win.keyboard.press(`${MOD}+,`);
+  await win.getByRole('tab', { name: 'Accessibility' }).click();
+  await win.getByRole('radiogroup', { name: 'Reduce motion' }).getByRole('radio', { name: 'Off', exact: true }).click();
+  await expect(win.locator('html')).not.toHaveAttribute('data-motion', 'reduce');
+  await win.keyboard.press('Escape');
+
   // Tabs: arrow keys move the single selection lens; shortcuts switch areas.
   await win.getByRole('tab', { name: 'Library' }).focus();
   await win.keyboard.press('ArrowRight');
@@ -76,8 +86,8 @@ test('keyboard, focus, menus and accessibility preferences', async () => {
   // Reduced motion and reduced transparency (in-app settings; "Follow macOS" is the default).
   await win.keyboard.press(`${MOD}+,`);
   await win.getByRole('tab', { name: 'Accessibility' }).click();
-  await win.getByRole('radiogroup', { name: 'Reduce motion' }).getByRole('radio', { name: 'On' }).click();
-  await win.getByRole('radiogroup', { name: 'Reduce transparency' }).getByRole('radio', { name: 'On' }).click();
+  await win.getByRole('radiogroup', { name: 'Reduce motion' }).getByRole('radio', { name: 'On', exact: true }).click();
+  await win.getByRole('radiogroup', { name: 'Reduce transparency' }).getByRole('radio', { name: 'On', exact: true }).click();
   await expect(win.locator('html')).toHaveAttribute('data-motion', 'reduce');
   await expect(win.locator('html')).toHaveAttribute('data-transparency', 'reduce');
   await s.shot('61-accessibility-settings');
